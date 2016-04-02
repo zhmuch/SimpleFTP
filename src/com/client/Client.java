@@ -7,4 +7,5 @@ package com.client;
 
 
 public class Client {
+	private int port;
 }
