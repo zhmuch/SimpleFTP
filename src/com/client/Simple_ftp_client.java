@@ -6,6 +6,6 @@ package com.client;
  */
 
 
-public class Client {
+public class Simple_ftp_client {
 	private int port;
 }
