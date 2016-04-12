@@ -9,6 +9,7 @@ import java.io.*;
 import java.net.*;
 
 import com.Simple_ftp_helper;
+import sun.awt.AWTAccessor;
 
 public class Simple_ftp_server {
 
@@ -17,30 +18,68 @@ public class Simple_ftp_server {
     private static String fileName;
 
     /**
-     * Experiment Parameters;
+     * Experiment Parameters
+     * Must be exactly same as in Client side.
+     *
      * mss: Maximum Segment Size;
      * mssCount: Number of Segments;
      * lastSeg: Size of the last segment(less or equal than a MSS)
      */
-    private static int mss;
-    private static int mssCount;
-    private static int lastSeg;
-    
+    private static int mss = 16;
+    private static int mssNum = 16;
+    private static int lastSeg = 16;
+    private static int header = 8;
+
 
     private static void listen() throws IOException{
 
         DatagramSocket server = new DatagramSocket(portNum);
 
+        DatagramSocket replyACK = new DatagramSocket();
+
 //        byte[] testCheck = { (byte) 0xed, 0x2A, 0x44, 0x10, 0x03, 0x30 };
 //        System.out.println("Checksum: " + Simple_ftp_helper.compChecksum(testCheck));
 
-        byte[] bootInfo = new byte[12];
+        System.out.println("MSS: " + mss);
+        System.out.println("mssNum: " + mssNum);
+        System.out.println("lastSeg: " + lastSeg);
 
+        byte[] tmp = new byte[header + mss];
+        DatagramPacket tmpReceiver = new DatagramPacket(tmp, header + mss);
+
+        while(true){
+
+            //  Receiving packet
+            server.receive(tmpReceiver);
+            tmp = tmpReceiver.getData();
+
+            //  Sequence Number
+            byte[] seqTmp = new byte[4];
+            System.arraycopy(tmp, 0, seqTmp, 0, 4);
+            int currSequence = java.nio.ByteBuffer.wrap(seqTmp).getInt();
+
+            //  Generating Random number to decide whether the packet should be accepted.
+            Random r = new Random();
+            double randomValue = r.nextDouble();
+
+            if(randomValue > errProb){
+
+            }
+            else{
+                System.out.println("Packet loss, sequence number = " + currSequence);
+            }
+
+            if(true)
+                break;
+        }
+
+        System.out.println("File Transfer Complete !");
 
     }
 
     public static void main(String[] args){
 
+//        For test
         String[] test = {"14000", "test", "0.1"};
         args = test;
 

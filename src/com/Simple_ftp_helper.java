@@ -12,6 +12,7 @@ public class Simple_ftp_helper {
      *
      * This helper function implements Checksum(16bits) computation.
      * Reference: http://stackoverflow.com/questions/4113890/how-to-calculate-the-internet-checksum-from-a-byte-in-java.
+     * MX
      */
     public static long compChecksum(byte[] buf) {
 
