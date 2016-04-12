@@ -16,12 +16,26 @@ public class Simple_ftp_server {
     private static double errProb;
     private static String fileName;
 
+    /**
+     * Experiment Parameters;
+     * mss: Maximum Segment Size;
+     * mssCount: Number of Segments;
+     * lastSeg: Size of the last segment(less or equal than a MSS)
+     */
+    private static int mss;
+    private static int mssCount;
+    private static int lastSeg;
+    
+
     private static void listen() throws IOException{
 
         DatagramSocket server = new DatagramSocket(portNum);
 
 //        byte[] testCheck = { (byte) 0xed, 0x2A, 0x44, 0x10, 0x03, 0x30 };
 //        System.out.println("Checksum: " + Simple_ftp_helper.compChecksum(testCheck));
+
+        byte[] bootInfo = new byte[12];
+
 
     }
 

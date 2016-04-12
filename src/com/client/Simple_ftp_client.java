@@ -7,5 +7,14 @@ package com.client;
 
 
 public class Simple_ftp_client {
+
 	private int port;
+
+	public static void main(String[] args){
+
+		byte[] test = new byte[4];
+		System.out.println(test.length);
+
+	}
+
 }
