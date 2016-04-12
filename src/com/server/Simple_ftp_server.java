@@ -13,7 +13,7 @@ import sun.awt.AWTAccessor;
 
 public class Simple_ftp_server {
 
-    private static int portNum;
+    private static int portNum = 14000;
     private static double errProb;
     private static String fileName;
 
@@ -47,11 +47,18 @@ public class Simple_ftp_server {
         byte[] tmp = new byte[header + mss];
         DatagramPacket tmpReceiver = new DatagramPacket(tmp, header + mss);
 
+        //  Sequence Number start at 0;
+        int expSequence = 0;
+
         while(true){
+
+            System.out.println("Listening");
 
             //  Receiving packet
             server.receive(tmpReceiver);
             tmp = tmpReceiver.getData();
+
+            System.out.println("Packet Received!");
 
             //  Sequence Number
             byte[] seqTmp = new byte[4];
@@ -63,6 +70,14 @@ public class Simple_ftp_server {
             double randomValue = r.nextDouble();
 
             if(randomValue > errProb){
+
+                //  If the receiving packet is expected
+                if(expSequence == currSequence){
+
+                }
+                else{
+                    System.out.println("Packet Discard, sequence number = " + currSequence);
+                }
 
             }
             else{
