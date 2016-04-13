@@ -158,8 +158,6 @@ public class Simple_ftp_server {
 
         DatagramPacket res = new DatagramPacket(resBytes, resBytes.length, clientAddr, clientPort);
 
-        System.out.println("ACK res: " + res);
-
         return res;
 
     }
