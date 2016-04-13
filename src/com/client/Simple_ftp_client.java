@@ -23,6 +23,14 @@ public class Simple_ftp_client {
 	private static InetAddress serverAddr;
 	private static int serverPort = 7735;
 
+	public static class Receiver implements Runnable {
+
+		public void run(){
+
+		}
+
+	}
+
 	public static void main(String[] args) throws IOException {
 
 		serverAddr = InetAddress.getByName(serverAddrString);

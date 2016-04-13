@@ -31,11 +31,12 @@ public class Simple_ftp_server {
      *
      * mss: Maximum Segment Size;
      * mssCount: Number of Segments;
-     * lastSeg: Size of the last segment(less or equal than a MSS)
+     * lastSeg: Size of the last segment(less or equal than a MSS);
+     * header:  Size of header;
      */
     private static int mss = 8;
     private static int mssNum = 16;
-    private static int lastSeg = 16;
+    private static int lastSeg = 8;
     private static int header = 8;
 
 
@@ -106,21 +107,12 @@ public class Simple_ftp_server {
                             fileOut.write(data, 0, mss);
                             expSequence++;
 
-
                             DatagramPacket res = generateACK(tmp);
                             replyACK.send(res);
-
-
 
                         } else {
                             System.out.println("Packet Discard, Checksum not match! Sequence number = " + currSequence);
                         }
-
-
-
-//            fileOut.write(tmp);
-//            fileOut.close();
-//            System.out.println("File Closed !");
 
                     } else {
                         System.out.println("Packet Discard, Not the expect sequence number! Sequence number = " + currSequence +
