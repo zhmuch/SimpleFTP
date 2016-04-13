@@ -38,6 +38,10 @@ public class Simple_ftp_helper {
 
         System.arraycopy(tmp, 0, res, 2 - tmp.length, tmp.length);
         return res;
+
+//        /**
+//         * Another Way to compute the checksum.
+//         */
 //        int length = buf.length;
 //        int i = 0;
 //

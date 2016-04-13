@@ -16,11 +16,16 @@ import java.nio.*;
 
 public class Simple_ftp_client {
 
-	private static int port;
-	private static String serverAddr = "192.168.1.3";
+	private static String clientAddr;
+	private static int clientPort = 7736;
+
+	private static String serverAddrString = "192.168.1.3";
+	private static InetAddress serverAddr;
+	private static int serverPort = 7735;
 
 	public static void main(String[] args) throws IOException {
 
+		serverAddr = InetAddress.getByName(serverAddrString);
 
 		//	8 Bytes Data
 		byte[] data = new byte[8];
@@ -40,24 +45,30 @@ public class Simple_ftp_client {
 
 		byte[] test = new byte[16];
 
-
 		System.arraycopy(tmpSeq, 0, test, 0, 4);
 		System.arraycopy(tmpCheck, 0, test, 4, 2);
 		System.arraycopy(tail, 0, test, 6, 2);
 		System.arraycopy(data, 0, test, 8, 8);
 
-		for(int i=0; i<16; i++)
-			System.out.println(test[i]);
-
 		System.out.println("Length of byte[] test is: " + test.length);
 
-		DatagramPacket p = new DatagramPacket(test, test.length, InetAddress.getByName(serverAddr), 14000);
+		DatagramPacket p = new DatagramPacket(test, test.length, serverAddr, serverPort);
 		DatagramSocket sendSocket = new DatagramSocket();
 		sendSocket.send(p);
 
 
+		//	Receive
 
+		DatagramSocket receiver = new DatagramSocket(clientPort);
+		byte[] receiveACK = new byte[8];
+		DatagramPacket tmpReceiver = new DatagramPacket(receiveACK, 8);
 
+		receiver.receive(tmpReceiver);
+		receiveACK = tmpReceiver.getData();
+
+		for(int i = 0; i < 8; i++)
+			System.out.print(receiveACK[i] + " ");
+		System.out.println();
 	}
 
 }

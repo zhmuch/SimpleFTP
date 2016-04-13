@@ -4,20 +4,26 @@
 
 package com.server;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.io.*;
 import java.net.*;
 
 import com.Simple_ftp_helper;
-import sun.awt.AWTAccessor;
+
 
 public class Simple_ftp_server {
 
-    private static int portNum = 14000;
+    private static InetAddress serverAddr;
+    private static int serverPort = 7735;      //Default Port Number;
+
     private static double errProb;
     private static String fileName;
 
     private static String filePath = "/Users/Muchen/Desktop/";
+
+    private static InetAddress clientAddr;
+    private static int clientPort = 7736;
 
     /**
      * Experiment Parameters
@@ -35,16 +41,15 @@ public class Simple_ftp_server {
 
     private static void listen() throws IOException{
 
-        DatagramSocket server = new DatagramSocket(portNum);
+        serverAddr = InetAddress.getLocalHost();
+        clientAddr = InetAddress.getLocalHost();
 
+        DatagramSocket server = new DatagramSocket(serverPort);
         DatagramSocket replyACK = new DatagramSocket();
 
-//        byte[] testCheck = { (byte) 0xed, 0x2A, 0x44, 0x10, 0x03, 0x30 };
-//        System.out.println("Checksum: " + Simple_ftp_helper.compChecksum(testCheck));
-
-        System.out.println("MSS: " + mss);
-        System.out.println("mssNum: " + mssNum);
-        System.out.println("lastSeg: " + lastSeg);
+//        System.out.println("MSS: " + mss);
+//        System.out.println("mssNum: " + mssNum);
+//        System.out.println("lastSeg: " + lastSeg);
 
         byte[] tmp = new byte[header + mss];
         DatagramPacket tmpReceiver = new DatagramPacket(tmp, header + mss);
@@ -55,14 +60,16 @@ public class Simple_ftp_server {
         //  Write receiving data to a file;
         FileOutputStream fileOut = new FileOutputStream(filePath + fileName, true);
 
-        while(true){
+        System.out.println("Server is listening! InetAddress: " + serverAddr + ",   Port Number: " + serverPort);
 
-            System.out.println("Listening");
+        while(true){
 
             //  Receiving packet
             server.receive(tmpReceiver);
             tmp = tmpReceiver.getData();
 
+            clientAddr = tmpReceiver.getAddress();
+            System.out.println("clientAddr " + clientAddr);
             System.out.println("Packet Received!");
 
             //  Sequence Number Field
@@ -75,7 +82,6 @@ public class Simple_ftp_server {
             //  Generating Random number to decide whether the packet should be accepted.
             Random r = new Random();
             double randomValue = r.nextDouble();
-
 
             if(randomValue > errProb){
 
@@ -93,23 +99,46 @@ public class Simple_ftp_server {
                         byte[] currCheck = Simple_ftp_helper.compChecksum(data);
                         boolean isCorrect = (currCheck[0] == tmp[4] && currCheck[1] == tmp[5]) ? true : false;
 
-                        if(isCorrect)
-                            System.out.println("Checksum Correct!");
-                        else
-                            System.out.println("Checksum Failed!");
+                        System.out.println("data size: " + data.length);
+
+                        if(isCorrect){
+
+                            fileOut.write(data, 0, mss);
+                            expSequence++;
+
+
+                            DatagramPacket res = generateACK(tmp);
+                            replyACK.send(res);
+
+
+
+                        } else {
+                            System.out.println("Packet Discard, Checksum not match! Sequence number = " + currSequence);
+                        }
+
+
 
 //            fileOut.write(tmp);
 //            fileOut.close();
 //            System.out.println("File Closed !");
 
                     } else {
-                        System.out.println("Packet Not Expected, sequence number = " + currSequence +
+                        System.out.println("Packet Discard, Not the expect sequence number! Sequence number = " + currSequence +
                                 ", Expect sequence number = " + expSequence);
                     }
                 }
             }
             else{
                 System.out.println("Packet loss, sequence number = " + currSequence);
+            }
+
+            if(expSequence >= mssNum){
+                //  File transfer complete;
+                fileOut.close();
+                server.close();
+                replyACK.close();
+
+                break;
             }
 
             if(true)
@@ -120,10 +149,33 @@ public class Simple_ftp_server {
 
     }
 
+    private static DatagramPacket generateACK(byte[] tmp){
+
+        byte[] resBytes = new byte[8];
+
+        //  Sequence Number field;
+        System.arraycopy(tmp, 0, resBytes, 0, 4);
+
+        //  All zeros field;
+        resBytes[4] = resBytes[5] = 0;
+
+        //  1010101010101010 field;
+        byte[] tail = new byte[2];
+        tail[0] = tail[1] = new BigInteger("1010101010101010", 2).toByteArray()[1];
+        System.arraycopy(tail, 0, resBytes, 6, 2);
+
+        DatagramPacket res = new DatagramPacket(resBytes, resBytes.length, clientAddr, clientPort);
+
+        System.out.println("ACK res: " + res);
+
+        return res;
+
+    }
+
     public static void main(String[] args){
 
 //        For test
-        String[] test = {"14000", "test", "-0.1"};
+        String[] test = {"7735", "test", "-0.1"};
         args = test;
 
         if(args.length != 3){
@@ -132,11 +184,11 @@ public class Simple_ftp_server {
             return;
         }
 
-        portNum = Integer.parseInt(args[0]);
+        serverPort = Integer.parseInt(args[0]);
         fileName = args[1];
         errProb = Double.parseDouble(args[2]);
 
-//        System.out.println("portNum: " + portNum);
+//        System.out.println("portNum: " + serverPort);
 //        System.out.println("fileName: " + fileName);
 //        System.out.println("errProb: " + errProb);
 
