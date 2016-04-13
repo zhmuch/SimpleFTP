@@ -56,8 +56,7 @@ public class Simple_ftp_client {
 		System.out.println("Length of byte[] test is: " + sendBytes.length);
 
 		DatagramPacket p = new DatagramPacket(sendBytes, sendBytes.length, serverAddr, serverPort);
-		DatagramSocket sendSocket = new DatagramSocket();
-		sendSocket.send(p);
+		sendData.send(p);
 
 	}
 
