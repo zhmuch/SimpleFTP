@@ -27,7 +27,8 @@ public class Simple_ftp_client {
 	private static int serverPort = 7735;
 
 	private static int mss = 8;
-	private static int mssNum = 16;
+	private static long fileSize;
+	private static long mssNum;
 	private static int lastSeg = 8;
 	private static int header = 8;
 
@@ -71,8 +72,26 @@ public class Simple_ftp_client {
 
 		//	Read and buffer file data;
 		File file = new File(fileToSend);
+		fileSize = file.length();
+		mssNum = fileSize / mss;
+		lastSeg = (int) (fileSize - mss * mssNum);
 		FileInputStream fileInput = new FileInputStream(file);
 
+		ArrayList<byte[]> fileBytes = new ArrayList<>();
+		for(int i = 0; i < mssNum; i++){
+			byte[] tmp = new byte[mss];
+			fileInput.read(tmp, 0, mss);
+			fileBytes.add(tmp);
+		}
+		byte[]tmp = new byte[lastSeg];
+		fileInput.read(tmp, 0, lastSeg);
+		fileBytes.add(tmp);
+
+		if(fileBytes.size() != mssNum + 1)
+			System.out.println("FileBuffer Error!");
+		else
+			System.out.println("FileBuffer Finish!");
+		fileInput.close();
 
 		//	8 Bytes Data
 		byte[] data = new byte[8];
