@@ -17,6 +17,7 @@ import java.nio.*;
 public class Simple_ftp_client {
 
 	private static DatagramSocket sendData;
+	private static DatagramSocket receiveACK;
 
 	private static InetAddress clientAddr;
 	private static int clientPort = 7736;
@@ -29,6 +30,8 @@ public class Simple_ftp_client {
 	private static int mssNum = 16;
 	private static int lastSeg = 8;
 	private static int header = 8;
+
+	private static String fileToSend = "/Users/Muchen/Desktop/send";
 
 
 	private static void rdt_send(byte[] data, int currSequence) throws IOException {
@@ -62,10 +65,21 @@ public class Simple_ftp_client {
 
 	private static void transmit() throws IOException{
 
+		//	Start ACKs Receiver;
+		Receiver receiver = new Receiver();
+		receiver.run();
+
+		//	Read and buffer file data;
+		File file = new File(fileToSend);
+		FileInputStream fileInput = new FileInputStream(file);
+
+
 		//	8 Bytes Data
 		byte[] data = new byte[8];
 
 		rdt_send(data, 0);
+
+
 
 	}
 
@@ -76,6 +90,8 @@ public class Simple_ftp_client {
 		serverAddr = InetAddress.getByName(serverAddrString);
 
 		sendData = new DatagramSocket();
+
+		receiveACK = new DatagramSocket(clientPort);
 
 		transmit();
 
@@ -96,6 +112,8 @@ public class Simple_ftp_client {
 
 		@Override
 		public void run(){
+
+			System.out.println("Receiver Running!");
 
 		}
 
