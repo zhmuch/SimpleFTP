@@ -67,7 +67,7 @@ public class Simple_ftp_client {
 		System.arraycopy(tail, 0, sendBytes, 6, 2);
 		System.arraycopy(data, 0, sendBytes, 8, data.length);
 
-		System.out.println("Length of byte[] test is: " + sendBytes.length);
+//		System.out.println("Length of byte[] test is: " + sendBytes.length);
 
 		DatagramPacket p = new DatagramPacket(sendBytes, sendBytes.length, serverAddr, serverPort);
 		sendData.send(p);
@@ -138,8 +138,23 @@ public class Simple_ftp_client {
 		public void run(){
 
 			beginTime = System.currentTimeMillis();
-
 			System.out.println("Receiver Running!");
+
+			int leftSeqNum = 0;
+			int rightSeqNum = 0;
+
+			for(int i = 0; i < winSize; i++){
+				if(i < fileBytes.size()){
+					try {
+						rdt_send(fileBytes.get(i), i);
+					}
+					catch (IOException e){
+						e.printStackTrace();
+					}
+
+					rightSeqNum = i;
+				}
+			}
 
 			while(true){
 
@@ -148,6 +163,7 @@ public class Simple_ftp_client {
 
 				try {
 					receiveACK.receive(tmpReceiver);
+					tmpRecByte = tmpReceiver.getData();
 				}
 				catch (IOException e){
 					e.printStackTrace();
@@ -156,10 +172,10 @@ public class Simple_ftp_client {
 				//	ACK Sequence field
 				byte[] recSeq = new byte[4];
 				System.arraycopy(tmpRecByte, 0, recSeq, 0, 4);
-				int recSeqNum = java.nio.ByteBuffer.wrap(recSeq).getInt();
+				int receiveSeqNum = java.nio.ByteBuffer.wrap(recSeq).getInt();
 
 				//	If all segments have been ACKed;
-				if(recSeqNum >= mssNum){
+				if(receiveSeqNum >= mssNum){
 
 					endTime = System.currentTimeMillis();
 					System.out.println("File Transfer Complete! " +

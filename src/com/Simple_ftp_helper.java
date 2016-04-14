@@ -20,6 +20,8 @@ public class Simple_ftp_helper {
      */
     public static byte[] compChecksum(byte[] buf) {
 
+//        System.out.println("buf.length " + buf.length);
+
         ByteBuffer bb = ByteBuffer.wrap(buf);
 
         int sum = 0;
@@ -36,7 +38,11 @@ public class Simple_ftp_helper {
         byte[] res = new byte[2];
         byte[] tmp = new BigInteger(Integer.toString(sum), 10).toByteArray();
 
-        System.arraycopy(tmp, 0, res, 2 - tmp.length, tmp.length);
+        if(tmp.length <= 2)
+            System.arraycopy(tmp, 0, res, 2 - tmp.length, tmp.length);
+        else
+            System.arraycopy(tmp, 0, res, 0, 2);
+
         return res;
 
 //        /**

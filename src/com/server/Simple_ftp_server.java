@@ -141,6 +141,11 @@ public class Simple_ftp_server {
 
     }
 
+    /**
+     *
+     * @param tmp
+     * @return
+     */
     private static DatagramPacket generateACK(byte[] tmp){
 
         byte[] resBytes = new byte[8];
