@@ -31,10 +31,20 @@ public class Simple_ftp_client {
 	private static long mssNum;
 	private static int lastSeg = 8;
 	private static int header = 8;
+	private static ArrayList<byte[]> fileBytes;
 
 	private static String fileToSend = "/Users/Muchen/Desktop/send";
+	private static int winSize = 2;
 
+	private static long beginTime;
+	private static long endTime;
 
+	/**
+	 *
+	 * @param data
+	 * @param currSequence
+	 * @throws IOException
+	 */
 	private static void rdt_send(byte[] data, int currSequence) throws IOException {
 
 		//	32-bit Sequence Number
@@ -66,10 +76,6 @@ public class Simple_ftp_client {
 
 	private static void transmit() throws IOException{
 
-		//	Start ACKs Receiver;
-		Receiver receiver = new Receiver();
-		receiver.run();
-
 		//	Read and buffer file data;
 		File file = new File(fileToSend);
 		fileSize = file.length();
@@ -77,10 +83,15 @@ public class Simple_ftp_client {
 		lastSeg = (int) (fileSize - mss * mssNum);
 		FileInputStream fileInput = new FileInputStream(file);
 
-		ArrayList<byte[]> fileBytes = new ArrayList<>();
+		fileBytes = new ArrayList<>();
 		for(int i = 0; i < mssNum; i++){
 			byte[] tmp = new byte[mss];
 			fileInput.read(tmp, 0, mss);
+
+//			for(byte j:tmp)
+//				System.out.print(j + " ");
+//			System.out.println();
+
 			fileBytes.add(tmp);
 		}
 		byte[]tmp = new byte[lastSeg];
@@ -93,12 +104,17 @@ public class Simple_ftp_client {
 			System.out.println("FileBuffer Finish!");
 		fileInput.close();
 
-		//	8 Bytes Data
-		byte[] data = new byte[8];
+//		System.out.println("lastSeg Size " + lastSeg);
+//		System.out.println("fileBytes Size " + fileBytes.size());
+//		for(byte[] i:fileBytes){
+//			for(byte j:i)
+//				System.out.print(j + " ");
+//			System.out.println();
+//		}
 
-		rdt_send(data, 0);
-
-
+		//	Start ACKs Receiver;
+		Receiver receiver = new Receiver();
+		receiver.run();
 
 	}
 
@@ -114,6 +130,49 @@ public class Simple_ftp_client {
 
 		transmit();
 
+	}
+
+	private static class Receiver implements Runnable {
+
+		@Override
+		public void run(){
+
+			beginTime = System.currentTimeMillis();
+
+			System.out.println("Receiver Running!");
+
+			while(true){
+
+				byte[] tmpRecByte = new byte[header];
+				DatagramPacket tmpReceiver = new DatagramPacket(tmpRecByte, header);
+
+				try {
+					receiveACK.receive(tmpReceiver);
+				}
+				catch (IOException e){
+					e.printStackTrace();
+				}
+
+				//	ACK Sequence field
+				byte[] recSeq = new byte[4];
+				System.arraycopy(tmpRecByte, 0, recSeq, 0, 4);
+				int recSeqNum = java.nio.ByteBuffer.wrap(recSeq).getInt();
+
+				//	If all segments have been ACKed;
+				if(recSeqNum >= mssNum){
+
+					endTime = System.currentTimeMillis();
+					System.out.println("File Transfer Complete! " +
+							"Begin Time: " + beginTime +
+							"  End Time: " + endTime +
+							"  Total Time(seconds): " + (endTime - beginTime) / 1000);
+
+					break;
+
+				}
+
+			}
+
 //		//	Receive
 //		DatagramSocket receiver = new DatagramSocket(clientPort);
 //		byte[] receiveACK = new byte[8];
@@ -125,14 +184,6 @@ public class Simple_ftp_client {
 //		for(int i = 0; i < 8; i++)
 //			System.out.print(receiveACK[i] + " ");
 //		System.out.println();
-	}
-
-	private static class Receiver implements Runnable {
-
-		@Override
-		public void run(){
-
-			System.out.println("Receiver Running!");
 
 		}
 
