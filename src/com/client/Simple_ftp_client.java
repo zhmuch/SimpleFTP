@@ -22,7 +22,7 @@ public class Simple_ftp_client {
 	private static InetAddress clientAddr;
 	private static int clientPort = 7736;
 
-	private static String serverAddrString = "192.168.1.3";
+	private static String serverAddrString = "10.139.58.207";
 	private static InetAddress serverAddr;
 	private static int serverPort = 7735;
 
@@ -33,6 +33,9 @@ public class Simple_ftp_client {
 	private static int header = 8;
 	private static ArrayList<byte[]> fileBytes;
 
+	/**
+	 * Windows "D://xxx//xxx"
+	 */
 	private static String fileToSend = "/Users/Muchen/Desktop/send";
 	private static int winSize = 2;
 	private static int leftSeqNum;
@@ -135,6 +138,8 @@ public class Simple_ftp_client {
 
 		Receiver receiver = new Receiver();
 		receiver.run();
+
+		System.exit(0);
 
 	}
 

@@ -20,6 +20,9 @@ public class Simple_ftp_server {
     private static double errProb;
     private static String fileName;
 
+    /**
+     * Windows "D://xxx//xxx"
+     */
     private static String filePath = "/Users/Muchen/Desktop/";
 
     private static InetAddress clientAddr;
@@ -35,7 +38,7 @@ public class Simple_ftp_server {
      * header:  Size of header;
      */
     private static int mss = 8;
-    private static int mssNum = 2;
+    private static int mssNum = 7;
     private static int lastSeg = 7;
     private static int header = 8;
 
@@ -180,7 +183,7 @@ public class Simple_ftp_server {
     public static void main(String[] args){
 
 //        For test
-        String[] test = {"7735", "test", "-0.1"};
+        String[] test = {"7735", "test", "0.9"};
         args = test;
 
         if(args.length != 3){
