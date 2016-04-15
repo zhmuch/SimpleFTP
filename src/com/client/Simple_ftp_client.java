@@ -35,6 +35,11 @@ public class Simple_ftp_client {
 
 	private static String fileToSend = "/Users/Muchen/Desktop/send";
 	private static int winSize = 2;
+	private static int leftSeqNum;
+	private static int rightSeqNum;
+
+	private static Retransmit retransmit = new Retransmit();
+	private static int timeOut = 1000;
 
 	private static long beginTime;
 	private static long endTime;
@@ -132,6 +137,18 @@ public class Simple_ftp_client {
 
 	}
 
+	private static void cancel(Timer timer){
+
+		synchronized (timer) {
+			retransmit.cancel();
+			timer.cancel();
+			timer.purge();
+		}
+
+		return;
+
+	}
+
 	private static class Receiver implements Runnable {
 
 		@Override
@@ -140,11 +157,10 @@ public class Simple_ftp_client {
 			beginTime = System.currentTimeMillis();
 			System.out.println("Receiver Running!");
 
-			int leftSeqNum = 0;
-			int rightSeqNum = 0;
+			leftSeqNum = 0;
+			rightSeqNum = 0;
 
-			for(int i = 0; i < winSize; i++){
-				if(i < fileBytes.size()){
+			for(int i = 0; i < winSize && i < fileBytes.size(); i++){
 					try {
 						rdt_send(fileBytes.get(i), i);
 					}
@@ -153,8 +169,10 @@ public class Simple_ftp_client {
 					}
 
 					rightSeqNum = i;
-				}
 			}
+
+			Timer timer = new Timer();
+			timer.schedule(retransmit, timeOut);
 
 			while(true){
 
@@ -177,6 +195,8 @@ public class Simple_ftp_client {
 				//	If all segments have been ACKed;
 				if(receiveSeqNum >= mssNum){
 
+					cancel(timer);
+
 					endTime = System.currentTimeMillis();
 					System.out.println("File Transfer Complete! " +
 							"Begin Time: " + beginTime +
@@ -187,19 +207,40 @@ public class Simple_ftp_client {
 
 				}
 
+				//	If receiveACK is expected, slide window rightward 1 slot;
+				if(receiveSeqNum == leftSeqNum){
+
+					if(rightSeqNum < (int) mssNum){
+
+						rightSeqNum++;
+						cancel(timer);
+
+						try{
+							rdt_send(fileBytes.get(rightSeqNum), rightSeqNum);
+						}
+						catch (IOException e){
+							e.printStackTrace();
+						}
+
+						timer = new Timer();
+						retransmit = new Retransmit();
+						timer.schedule(retransmit, timeOut);
+					}
+
+					leftSeqNum++;
+
+				}
+
 			}
 
-//		//	Receive
-//		DatagramSocket receiver = new DatagramSocket(clientPort);
-//		byte[] receiveACK = new byte[8];
-//		DatagramPacket tmpReceiver = new DatagramPacket(receiveACK, 8);
-//
-//		receiver.receive(tmpReceiver);
-//		receiveACK = tmpReceiver.getData();
-//
-//		for(int i = 0; i < 8; i++)
-//			System.out.print(receiveACK[i] + " ");
-//		System.out.println();
+		}
+
+	}
+
+	private static class Retransmit extends TimerTask {
+
+		@Override
+		public void run(){
 
 		}
 
