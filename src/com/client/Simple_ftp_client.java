@@ -64,6 +64,8 @@ public class Simple_ftp_client {
 
 		//	16-bit checksum
 		byte[] tmpCheck = Simple_ftp_helper.compChecksum(data);
+		System.out.print(tmpCheck[0] + " " + tmpCheck[1]);
+		System.out.println();
 
 		//	16-bit 0101010101010101
 		byte[] tail = new BigInteger("0101010101010101", 2).toByteArray();
@@ -214,7 +216,7 @@ public class Simple_ftp_client {
 					System.out.println("File Transfer Complete! " +
 							"Begin Time: " + beginTime +
 							"  End Time: " + endTime +
-							"  Total Time(seconds): " + (endTime - beginTime) / 1000);
+							"  Total Time(seconds): " + (double)(endTime - beginTime) / 1000);
 
 					break;
 
