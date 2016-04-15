@@ -29,7 +29,7 @@ public class Simple_ftp_client {
 	private static int mss = 8;
 	private static long fileSize;
 	private static long mssNum;
-	private static int lastSeg = 8;
+	private static int lastSeg;
 	private static int header = 8;
 	private static ArrayList<byte[]> fileBytes;
 
@@ -39,6 +39,7 @@ public class Simple_ftp_client {
 	private static int rightSeqNum;
 
 	private static Retransmit retransmit = new Retransmit();
+	private static Timer timer;
 	private static int timeOut = 1000;
 
 	private static long beginTime;
@@ -51,6 +52,9 @@ public class Simple_ftp_client {
 	 * @throws IOException
 	 */
 	private static void rdt_send(byte[] data, int currSequence) throws IOException {
+
+		System.out.println("Sending! data length: " + data.length +
+				" Sequence: " + currSequence);
 
 		//	32-bit Sequence Number
 		ByteArrayOutputStream tmpBytes = new ByteArrayOutputStream();
@@ -88,6 +92,10 @@ public class Simple_ftp_client {
 		lastSeg = (int) (fileSize - mss * mssNum);
 		FileInputStream fileInput = new FileInputStream(file);
 
+		System.out.println("fileSize: " + fileSize);
+		System.out.println("mssNum: " + mssNum);
+		System.out.println("lastSeq: " + lastSeg);
+
 		fileBytes = new ArrayList<>();
 		for(int i = 0; i < mssNum; i++){
 			byte[] tmp = new byte[mss];
@@ -118,6 +126,11 @@ public class Simple_ftp_client {
 //		}
 
 		//	Start ACKs Receiver;
+
+		System.out.println("Type in anything to start...");
+		BufferedReader keybd = new BufferedReader(new InputStreamReader(System.in));
+		String keybdi = keybd.readLine();
+
 		Receiver receiver = new Receiver();
 		receiver.run();
 
@@ -137,7 +150,7 @@ public class Simple_ftp_client {
 
 	}
 
-	private static void cancel(Timer timer){
+	private static void cancel(){
 
 		synchronized (timer) {
 			retransmit.cancel();
@@ -171,7 +184,7 @@ public class Simple_ftp_client {
 					rightSeqNum = i;
 			}
 
-			Timer timer = new Timer();
+			timer = new Timer();
 			timer.schedule(retransmit, timeOut);
 
 			while(true){
@@ -195,7 +208,7 @@ public class Simple_ftp_client {
 				//	If all segments have been ACKed;
 				if(receiveSeqNum >= mssNum){
 
-					cancel(timer);
+					cancel();
 
 					endTime = System.currentTimeMillis();
 					System.out.println("File Transfer Complete! " +
@@ -209,11 +222,9 @@ public class Simple_ftp_client {
 
 				//	If receiveACK is expected, slide window rightward 1 slot;
 				if(receiveSeqNum == leftSeqNum){
-
 					if(rightSeqNum < (int) mssNum){
-
 						rightSeqNum++;
-						cancel(timer);
+						cancel();
 
 						try{
 							rdt_send(fileBytes.get(rightSeqNum), rightSeqNum);
@@ -226,13 +237,11 @@ public class Simple_ftp_client {
 						retransmit = new Retransmit();
 						timer.schedule(retransmit, timeOut);
 					}
-
 					leftSeqNum++;
-
 				}
-
 			}
 
+			System.out.println("Closing Receiver()...");
 		}
 
 	}
@@ -241,6 +250,24 @@ public class Simple_ftp_client {
 
 		@Override
 		public void run(){
+
+			System.out.println("Timeout! Retransmit! " +
+					"Left_Sequence_Number: " + leftSeqNum + "  Right_Sequence_Number: " + rightSeqNum);
+
+			cancel();
+
+			for(int i = leftSeqNum; i <= rightSeqNum; i++){
+				try {
+					rdt_send(fileBytes.get(i), i);
+				}
+				catch (IOException e){
+					e.printStackTrace();
+				}
+			}
+
+			timer = new Timer();
+			retransmit = new Retransmit();
+			timer.schedule(retransmit, timeOut);
 
 		}
 

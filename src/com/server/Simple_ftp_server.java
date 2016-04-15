@@ -35,8 +35,8 @@ public class Simple_ftp_server {
      * header:  Size of header;
      */
     private static int mss = 8;
-    private static int mssNum = 16;
-    private static int lastSeg = 8;
+    private static int mssNum = 4;
+    private static int lastSeg = 0;
     private static int header = 8;
 
 
@@ -110,6 +110,9 @@ public class Simple_ftp_server {
                             DatagramPacket res = generateACK(tmp);
                             replyACK.send(res);
 
+                        } else if(expSequence > currSequence) {
+                            DatagramPacket res = generateACK(tmp);
+                            replyACK.send(res);
                         } else {
                             System.out.println("Packet Discard, Checksum not match! Sequence number = " + currSequence);
                         }
@@ -124,7 +127,7 @@ public class Simple_ftp_server {
                 System.out.println("Packet loss, sequence number = " + currSequence);
             }
 
-            if(expSequence >= mssNum){
+            if(expSequence > mssNum){
                 //  File transfer complete;
                 fileOut.close();
                 server.close();
@@ -133,8 +136,6 @@ public class Simple_ftp_server {
                 break;
             }
 
-            if(true)
-                break;
         }
 
         System.out.println("File Transfer Complete !");
