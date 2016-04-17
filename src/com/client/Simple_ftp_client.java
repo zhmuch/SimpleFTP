@@ -22,7 +22,7 @@ public class Simple_ftp_client {
 	private static InetAddress clientAddr;
 	private static int clientPort = 7736;
 
-	private static String serverAddrString = "10.139.58.207";
+	private static String serverAddrString = "71.69.168.191";
 	private static InetAddress serverAddr;
 	private static int serverPort = 7735;
 

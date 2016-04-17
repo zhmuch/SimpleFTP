@@ -26,6 +26,7 @@ public class Simple_ftp_server {
     private static String filePath = "/Users/Muchen/Desktop/";
 
     private static InetAddress clientAddr;
+    private static String clientAddrString = "192.168.1.137";
     private static int clientPort = 7736;
 
     /**
@@ -37,16 +38,16 @@ public class Simple_ftp_server {
      * lastSeg: Size of the last segment(less or equal than a MSS);
      * header:  Size of header;
      */
-    private static int mss = 8;
-    private static int mssNum = 7;
-    private static int lastSeg = 7;
+    private static int mss = 500;
+    private static int mssNum = 2187;
+    private static int lastSeg = 457;
     private static int header = 8;
 
 
     private static void listen() throws IOException{
 
         serverAddr = InetAddress.getLocalHost();
-        clientAddr = InetAddress.getLocalHost();
+        clientAddr = InetAddress.getByName(clientAddrString);
 
         DatagramSocket server = new DatagramSocket(serverPort);
         DatagramSocket replyACK = new DatagramSocket();
@@ -73,15 +74,15 @@ public class Simple_ftp_server {
             tmp = tmpReceiver.getData();
 
             clientAddr = tmpReceiver.getAddress();
-            System.out.println("clientAddr " + clientAddr);
-            System.out.println("Packet Received!");
+//            System.out.println("clientAddr " + clientAddr);
+//            System.out.println("Packet Received!");
 
             //  Sequence Number Field
             byte[] tmpSeq = new byte[4];
             System.arraycopy(tmp, 0, tmpSeq, 0, 4);
 
             int currSequence = java.nio.ByteBuffer.wrap(tmpSeq).getInt();
-            System.out.println("Receiving Sequence Number: " + currSequence);
+//            System.out.println("Receiving Sequence Number: " + currSequence);
 
             //  Generating Random number to decide whether the packet should be accepted.
             Random r = new Random();
@@ -183,7 +184,7 @@ public class Simple_ftp_server {
     public static void main(String[] args){
 
 //        For test
-        String[] test = {"7735", "test", "0.9"};
+        String[] test = {"7735", "test", "-0.1"};
         args = test;
 
         if(args.length != 3){
