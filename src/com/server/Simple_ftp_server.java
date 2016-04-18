@@ -67,6 +67,8 @@ public class Simple_ftp_server {
 
         System.out.println("Server is listening! InetAddress: " + serverAddr + ",   Port Number: " + serverPort);
 
+        int errCount = 0;
+
         while(true){
 
             //  Receiving packet
@@ -131,13 +133,14 @@ public class Simple_ftp_server {
                         DatagramPacket res = generateACK(tmp);
                         replyACK.send(res);
                     } else {
-                        System.out.println("Packet Discard, Not the expect sequence number! Sequence number = " + currSequence +
-                                ", Expect sequence number = " + expSequence);
+//                        System.out.println("Packet Discard, Not the expect sequence number! Sequence number = " + currSequence +
+//                                ", Expect sequence number = " + expSequence);
                     }
                 }
             }
             else{
                 System.out.println("Packet loss, sequence number = " + currSequence);
+                errCount++;
             }
 
             if(expSequence > mssNum){
@@ -145,6 +148,8 @@ public class Simple_ftp_server {
                 fileOut.close();
                 server.close();
                 replyACK.close();
+
+                System.out.println("errCount: " + errCount);
 
                 break;
             }
@@ -184,7 +189,7 @@ public class Simple_ftp_server {
     public static void main(String[] args){
 
 //        For test
-        String[] test = {"7735", "test", "-0.1"};
+        String[] test = {"7735", "test", "0.01"};
         args = test;
 
         if(args.length != 3){
