@@ -22,11 +22,13 @@ public class Simple_ftp_client {
 	private static InetAddress clientAddr;
 	private static int clientPort = 7736;
 
-	private static String serverAddrString = "71.69.168.191";
+	private static String serverAddrString = "192.168.1.5";
 	private static InetAddress serverAddr;
 	private static int serverPort = 7735;
 
-	private static int mss = 8;
+	private static int mss = 5000;
+	private static int winSize = 32;
+
 	private static long fileSize;
 	private static long mssNum;
 	private static int lastSeg;
@@ -37,7 +39,6 @@ public class Simple_ftp_client {
 	 * Windows "D://xxx//xxx"
 	 */
 	private static String fileToSend = "/Users/Muchen/Desktop/send";
-	private static int winSize = 2;
 	private static int leftSeqNum;
 	private static int rightSeqNum;
 
@@ -56,8 +57,8 @@ public class Simple_ftp_client {
 	 */
 	private static void rdt_send(byte[] data, int currSequence) throws IOException {
 
-		System.out.println("Sending! data length: " + data.length +
-				" Sequence: " + currSequence);
+//		System.out.println("Sending! data length: " + data.length +
+//				" Sequence: " + currSequence);
 
 		//	32-bit Sequence Number
 		ByteArrayOutputStream tmpBytes = new ByteArrayOutputStream();
@@ -67,8 +68,8 @@ public class Simple_ftp_client {
 
 		//	16-bit checksum
 		byte[] tmpCheck = Simple_ftp_helper.compChecksum(data);
-		System.out.print(tmpCheck[0] + " " + tmpCheck[1]);
-		System.out.println();
+//		System.out.print(tmpCheck[0] + " " + tmpCheck[1]);
+//		System.out.println();
 
 		//	16-bit 0101010101010101
 		byte[] tail = new BigInteger("0101010101010101", 2).toByteArray();
@@ -81,7 +82,7 @@ public class Simple_ftp_client {
 		System.arraycopy(tail, 0, sendBytes, 6, 2);
 		System.arraycopy(data, 0, sendBytes, 8, data.length);
 
-//		System.out.println("Length of byte[] test is: " + sendBytes.length);
+//		System.out.println(currSequence + "th sending data size is: " + sendBytes.length);
 
 		DatagramPacket p = new DatagramPacket(sendBytes, sendBytes.length, serverAddr, serverPort);
 		sendData.send(p);
@@ -97,47 +98,64 @@ public class Simple_ftp_client {
 		lastSeg = (int) (fileSize - mss * mssNum);
 		FileInputStream fileInput = new FileInputStream(file);
 
-		System.out.println("fileSize: " + fileSize);
-		System.out.println("mssNum: " + mssNum);
-		System.out.println("lastSeq: " + lastSeg);
+//		System.out.println("fileSize: " + fileSize);
+//		System.out.println("mss: " + mss);
+//		System.out.println("mssNum: " + mssNum);
+//		System.out.println("lastSeq: " + lastSeg);
 
+		//	Buffering data;
 		fileBytes = new ArrayList<>();
 		for(int i = 0; i < mssNum; i++){
 			byte[] tmp = new byte[mss];
 			fileInput.read(tmp, 0, mss);
-
-//			for(byte j:tmp)
-//				System.out.print(j + " ");
-//			System.out.println();
-
 			fileBytes.add(tmp);
 		}
 		byte[]tmp = new byte[lastSeg];
 		fileInput.read(tmp, 0, lastSeg);
 		fileBytes.add(tmp);
 
-		if(fileBytes.size() != mssNum + 1)
+		if(fileBytes.size() != mssNum + 1){
 			System.out.println("FileBuffer Error!");
+			System.exit(0);
+		}
 		else
 			System.out.println("FileBuffer Finish!");
 		fileInput.close();
 
-//		System.out.println("lastSeg Size " + lastSeg);
-//		System.out.println("fileBytes Size " + fileBytes.size());
-//		for(byte[] i:fileBytes){
-//			for(byte j:i)
-//				System.out.print(j + " ");
-//			System.out.println();
-//		}
+		//  Agreement about mss, mssNum, lastSeg;
+		ByteArrayOutputStream bootBytes = new ByteArrayOutputStream();
+		DataOutputStream bootOut = new DataOutputStream(bootBytes);
+		bootOut.writeInt(mss);
+		bootOut.writeInt((int) mssNum);
+		bootOut.writeInt(lastSeg);
 
-		//	Start ACKs Receiver;
+		byte[] bootOutBytes = bootBytes.toByteArray();
+		DatagramPacket bootInfo = new DatagramPacket(bootOutBytes, bootOutBytes.length, serverAddr, serverPort);
+		sendData.send(bootInfo);
 
-		System.out.println("Type in anything to start...");
-		BufferedReader keybd = new BufferedReader(new InputStreamReader(System.in));
-		String keybdi = keybd.readLine();
+		//	Check if server is online and agree with parameters;
+		byte[] bootAckByte = new byte[8];
+		DatagramPacket bootAckReceiver = new DatagramPacket(bootAckByte, 8);
+		receiveACK.receive(bootAckReceiver);
+		bootAckByte = bootAckReceiver.getData();
 
-		Receiver receiver = new Receiver();
-		receiver.run();
+		byte[] bootAckMss = new byte[4];
+		System.arraycopy(bootAckByte, 0, bootAckMss, 0, 4);
+		int bootMss = java.nio.ByteBuffer.wrap(bootAckMss).getInt();
+
+		if(bootMss == mss) {
+
+			System.out.println("Successfully connect to server at " + serverAddr + " !");
+			System.out.println("Type in anything to start...");
+
+			BufferedReader keybd = new BufferedReader(new InputStreamReader(System.in));
+			String keybdi = keybd.readLine();
+
+			//	Start ACKs Receiver;
+			Receiver receiver = new Receiver();
+			receiver.run();
+
+		}
 
 		System.exit(0);
 
@@ -175,7 +193,7 @@ public class Simple_ftp_client {
 		public void run(){
 
 			beginTime = System.currentTimeMillis();
-			System.out.println("Receiver Running!");
+//			System.out.println("Receiver Running!");
 
 			leftSeqNum = 0;
 			rightSeqNum = 0;

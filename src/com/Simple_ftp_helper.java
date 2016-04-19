@@ -2,7 +2,6 @@ package com;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.Random;
 
 /**
  * Created by Muchen on 4/10/16.
@@ -20,8 +19,6 @@ public class Simple_ftp_helper {
      * MX
      */
     public static byte[] compChecksum(byte[] buf) {
-
-//        System.out.println("buf.length " + buf.length);
 
         ByteBuffer bb = ByteBuffer.wrap(buf);
 
@@ -80,17 +77,6 @@ public class Simple_ftp_helper {
 //        sum = sum & 0xFFFF;
 //        return (int)sum;
 
-    }
-
-    public static void main (String[] args){
-        double tmp = 0;
-        for (int i = 0; i<100; i++){
-            Random r = new Random();
-            double randomValue = r.nextDouble();
-            tmp += randomValue;
-        }
-
-        System.out.println(tmp);
     }
 
 }

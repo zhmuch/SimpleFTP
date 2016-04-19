@@ -17,17 +17,13 @@ public class Simple_ftp_server {
     private static InetAddress serverAddr;
     private static int serverPort = 7735;      //Default Port Number;
 
+    private static InetAddress clientAddr;
+    private static String clientAddrString = "192.168.1.5";
+    private static int clientPort = 7736;
+
     private static double errProb;
     private static String fileName;
-
-    /**
-     * Windows "D://xxx//xxx"
-     */
     private static String filePath = "/Users/Muchen/Desktop/";
-
-    private static InetAddress clientAddr;
-    private static String clientAddrString = "192.168.1.137";
-    private static int clientPort = 7736;
 
     /**
      * Experiment Parameters
@@ -38,9 +34,10 @@ public class Simple_ftp_server {
      * lastSeg: Size of the last segment(less or equal than a MSS);
      * header:  Size of header;
      */
-    private static int mss = 500;
-    private static int mssNum = 2187;
-    private static int lastSeg = 457;
+    private static int mss = 0;
+    private static int mssNum = 0;
+    private static int lastSeg = 0;
+
     private static int header = 8;
 
 
@@ -52,13 +49,6 @@ public class Simple_ftp_server {
         DatagramSocket server = new DatagramSocket(serverPort);
         DatagramSocket replyACK = new DatagramSocket();
 
-//        System.out.println("MSS: " + mss);
-//        System.out.println("mssNum: " + mssNum);
-//        System.out.println("lastSeg: " + lastSeg);
-
-        byte[] tmp = new byte[header + mss];
-        DatagramPacket tmpReceiver = new DatagramPacket(tmp, header + mss);
-
         //  Sequence Number start at 0;
         int expSequence = 0;
 
@@ -67,17 +57,54 @@ public class Simple_ftp_server {
 
         System.out.println("Server is listening! InetAddress: " + serverAddr + ",   Port Number: " + serverPort);
 
+        //  Agreement about mss, mssNum, lastSeg;
+        byte[] bootInfo = new byte[12];
+        DatagramPacket bootReceiver = new DatagramPacket(bootInfo, 12);
+        server.receive(bootReceiver);
+
+//        System.out.println("bootInfo get!");
+
+        bootInfo = bootReceiver.getData();
+
+        byte[] mssBytes = new byte[4];
+        System.arraycopy(bootInfo, 0, mssBytes, 0, 4);
+        mss = java.nio.ByteBuffer.wrap(mssBytes).getInt();
+
+        byte[] mssNumBytes = new byte[4];
+        System.arraycopy(bootInfo, 4, mssNumBytes, 0, 4);
+        mssNum = java.nio.ByteBuffer.wrap(mssNumBytes).getInt();
+
+        byte[] lastSegBytes = new byte[4];
+        System.arraycopy(bootInfo, 8, lastSegBytes, 0, 4);
+        lastSeg = java.nio.ByteBuffer.wrap(lastSegBytes).getInt();
+
+        //  ACK back to client.
+        DatagramPacket bootRes = generateACK(mssBytes);
+        replyACK.send(bootRes);
+
+        System.out.println("Successfully connect to client at " + bootReceiver.getAddress() + " !");
+//        System.out.println("mss: " + mss);
+//        System.out.println("mssNum: " + mssNum);
+//        System.out.println("lastSeq: " + lastSeg);
+
+
+        //  Receiving Datagram;
+        byte[] tmp = new byte[header + mss];
+        DatagramPacket tmpReceiver = new DatagramPacket(tmp, header + mss);
+
+        //  error count initialization;
         int errCount = 0;
+        Random r = new Random();
 
         while(true){
 
             //  Receiving packet
             server.receive(tmpReceiver);
             tmp = tmpReceiver.getData();
+//            System.out.println("tmp.size: " + tmp.length);
 
             clientAddr = tmpReceiver.getAddress();
 //            System.out.println("clientAddr " + clientAddr);
-//            System.out.println("Packet Received!");
 
             //  Sequence Number Field
             byte[] tmpSeq = new byte[4];
@@ -87,17 +114,17 @@ public class Simple_ftp_server {
 //            System.out.println("Receiving Sequence Number: " + currSequence);
 
             //  Generating Random number to decide whether the packet should be accepted.
-            Random r = new Random();
             double randomValue = r.nextDouble();
 
             if(randomValue > errProb){
 
                 // Tail field
-                if(tmp[6] != 85 || tmp[7] != 85)
+//                if(tmp[6] != 85 || tmp[7] != 85)
+//
+//                    System.out.println("Packet Discard, Not a data packet! sequence number = " + currSequence);
 
-                    System.out.println("Packet Discard, Not a data packet! sequence number = " + currSequence);
+//                else {
 
-                else {
                     //  If the packet if expected.
                     if (expSequence == currSequence) {
 
@@ -112,19 +139,20 @@ public class Simple_ftp_server {
                             data = new byte[lastSeg];
                             dataSize = lastSeg;
                         }
+
                         System.arraycopy(tmp, 8, data, 0, dataSize);
 
                         byte[] currCheck = Simple_ftp_helper.compChecksum(data);
                         boolean isCorrect = (currCheck[0] == tmp[4] && currCheck[1] == tmp[5]) ? true : false;
 
-//                        System.out.println("data size: " + data.length);
-
                         if(isCorrect){
+
                             fileOut.write(data, 0, dataSize);
                             expSequence++;
 
                             DatagramPacket res = generateACK(tmp);
                             replyACK.send(res);
+
                         } else {
                             System.out.println("Packet Discard, Checksum not match! Sequence number = " + currSequence);
                         }
@@ -136,7 +164,7 @@ public class Simple_ftp_server {
 //                        System.out.println("Packet Discard, Not the expect sequence number! Sequence number = " + currSequence +
 //                                ", Expect sequence number = " + expSequence);
                     }
-                }
+//                }
             }
             else{
                 System.out.println("Packet loss, sequence number = " + currSequence);
@@ -189,7 +217,7 @@ public class Simple_ftp_server {
     public static void main(String[] args){
 
 //        For test
-        String[] test = {"7735", "test", "0.01"};
+        String[] test = {"7735", "test", "0.05"};
         args = test;
 
         if(args.length != 3){
