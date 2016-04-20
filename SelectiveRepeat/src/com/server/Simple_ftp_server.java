@@ -18,7 +18,7 @@ public class Simple_ftp_server {
     private static int serverPort = 7735;      //Default Port Number;
 
     private static InetAddress clientAddr;
-    private static String clientAddrString = "192.168.1.3";
+//    private static String clientAddrString;
     private static int clientPort = 7736;
 
     private static double errProb;
@@ -46,7 +46,7 @@ public class Simple_ftp_server {
     private static int left;
     private static int right;
 
-//    private static ArrayList<byte[]> fileBytes;
+    //    private static ArrayList<byte[]> fileBytes;
     private static byte[] dataWrite;
 
     private static int header = 8;
@@ -54,7 +54,7 @@ public class Simple_ftp_server {
     private static void listen() throws IOException{
 
         serverAddr = InetAddress.getLocalHost();
-        clientAddr = InetAddress.getByName(clientAddrString);
+//        clientAddr = InetAddress.getByName(clientAddrString);
 
         DatagramSocket server = new DatagramSocket(serverPort);
         DatagramSocket replyACK = new DatagramSocket();
@@ -71,6 +71,9 @@ public class Simple_ftp_server {
         byte[] bootInfo = new byte[12];
         DatagramPacket bootReceiver = new DatagramPacket(bootInfo, 12);
         server.receive(bootReceiver);
+
+        clientAddr = bootReceiver.getAddress();
+//        System.out.println("clientAddr: " + clientAddr);
 
 //        System.out.println("bootInfo get!");
 
@@ -92,7 +95,7 @@ public class Simple_ftp_server {
         DatagramPacket bootRes = generateACK(mssBytes);
         replyACK.send(bootRes);
 
-        System.out.println("Successfully connect to client at " + bootReceiver.getAddress() + " !");
+        System.out.println("Successfully connect to client at " + clientAddr + " !");
 //        System.out.println("mss: " + mss);
 //        System.out.println("mssNum: " + mssNum);
 //        System.out.println("lastSeq: " + lastSeg);
@@ -123,7 +126,7 @@ public class Simple_ftp_server {
             tmp = tmpReceiver.getData();
 //            System.out.println("tmp.size: " + tmp.length);
 
-            clientAddr = tmpReceiver.getAddress();
+//            clientAddr = tmpReceiver.getAddress();
 //            System.out.println("clientAddr " + clientAddr);
 
             //  Sequence Number Field
