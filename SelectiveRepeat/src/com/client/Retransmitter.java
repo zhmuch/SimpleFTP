@@ -18,7 +18,7 @@ public class Retransmitter extends TimerTask {
     @Override
     public void run(){
 
-//        System.out.println("Timeout! Retransmit! Sequence Number: " + sequ);
+        System.out.println("Timeout, sequence Number: " + sequ);
 
         Simple_ftp_client.cancel(sequ);
 
