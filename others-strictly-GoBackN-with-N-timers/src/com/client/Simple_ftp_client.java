@@ -261,6 +261,8 @@ public class Simple_ftp_client {
 				System.arraycopy(tmpRecByte, 0, recSeq, 0, 4);
 				int receiveSeqNum = java.nio.ByteBuffer.wrap(recSeq).getInt();
 
+				cancel(receiveSeqNum);
+
 //				System.out.println("ACK: " + receiveSeqNum);
 
 				//	If all segments have been ACKed;
@@ -283,8 +285,6 @@ public class Simple_ftp_client {
 				if(receiveSeqNum == leftSeqNum){
 					if(rightSeqNum < (int) mssNum){
 						rightSeqNum++;
-
-						cancel(receiveSeqNum);
 
 						try{
 							rdt_send(fileBytes.get(rightSeqNum), rightSeqNum);
