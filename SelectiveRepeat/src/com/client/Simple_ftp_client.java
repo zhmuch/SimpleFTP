@@ -22,12 +22,12 @@ public class Simple_ftp_client {
 	private static InetAddress clientAddr;
 	private static int clientPort = 7736;
 
-	private static String serverAddrString = "192.168.1.3";
+	private static String serverAddrString;
 	private static InetAddress serverAddr;
-	private static int serverPort = 7735;
+	private static int serverPort;
 
-	private static int mss = 10000;
-	private static int winSize = 32;
+	private static int mss;
+	private static int winSize;
 
 	private static long fileSize;
 	private static long mssNum;
@@ -41,7 +41,7 @@ public class Simple_ftp_client {
 	/**
 	 * Windows "D://xxx//xxx"
 	 */
-	private static String fileToSend = "/Users/Muchen/Desktop/send";
+	private static String fileToSend = "/Users/Muchen/Desktop/";
 	private static int leftSeqNum;
 	private static int rightSeqNum;
 
@@ -101,10 +101,10 @@ public class Simple_ftp_client {
 		lastSeg = (int) (fileSize - mss * mssNum);
 		FileInputStream fileInput = new FileInputStream(file);
 
-//		System.out.println("fileSize: " + fileSize);
+		System.out.println("fileSize: " + fileSize);
 //		System.out.println("mss: " + mss);
-//		System.out.println("mssNum: " + mssNum);
-//		System.out.println("lastSeq: " + lastSeg);
+		System.out.println("mssNum: " + mssNum);
+		System.out.println("lastSeq: " + lastSeg);
 
 		ack = new boolean[(int)mssNum + 1];
 		unAck = (int)mssNum + 1;
@@ -168,6 +168,29 @@ public class Simple_ftp_client {
 	}
 
 	public static void main(String[] args) throws IOException {
+
+		//        For test
+		String[] test = {"10.139.85.19", "7735", "send", "64", "500"};
+		args = test;
+
+		if(args.length != 5){
+			System.out.println("Input Parameters Error!");
+			System.out.println("Simple_ftp_server port# file-name p");
+			return;
+		}
+
+		serverAddrString = args[0];
+		serverPort = Integer.parseInt(args[1]);
+		String fileName = args[2];
+		fileToSend = fileToSend + fileName;
+		winSize = Integer.parseInt(args[3]);
+		mss = Integer.parseInt(args[4]);
+
+		System.out.println("Server Addr: " + serverAddrString);
+		System.out.println("Server Port: " + serverPort);
+		System.out.println("fileToSend: " + fileToSend);
+		System.out.println("winSize: " + winSize);
+		System.out.println("mss: " + mss);
 
 		clientAddr = InetAddress.getLocalHost();
 
