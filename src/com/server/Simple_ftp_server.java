@@ -18,7 +18,7 @@ public class Simple_ftp_server {
     private static int serverPort = 7735;      //Default Port Number;
 
     private static InetAddress clientAddr;
-    private static String clientAddrString = "192.168.1.5";
+//    private static String clientAddrString = "10.139.85.19";
     private static int clientPort = 7736;
 
     private static double errProb;
@@ -44,7 +44,7 @@ public class Simple_ftp_server {
     private static void listen() throws IOException{
 
         serverAddr = InetAddress.getLocalHost();
-        clientAddr = InetAddress.getByName(clientAddrString);
+//        clientAddr = InetAddress.getByName(clientAddrString);
 
         DatagramSocket server = new DatagramSocket(serverPort);
         DatagramSocket replyACK = new DatagramSocket();
@@ -61,6 +61,9 @@ public class Simple_ftp_server {
         byte[] bootInfo = new byte[12];
         DatagramPacket bootReceiver = new DatagramPacket(bootInfo, 12);
         server.receive(bootReceiver);
+
+        clientAddr = bootReceiver.getAddress();
+        System.out.println("clientAddr: " + clientAddr);
 
 //        System.out.println("bootInfo get!");
 
@@ -82,7 +85,7 @@ public class Simple_ftp_server {
         DatagramPacket bootRes = generateACK(mssBytes);
         replyACK.send(bootRes);
 
-        System.out.println("Successfully connect to client at " + bootReceiver.getAddress() + " !");
+        System.out.println("Successfully connect to client at " + clientAddr + " !");
 //        System.out.println("mss: " + mss);
 //        System.out.println("mssNum: " + mssNum);
 //        System.out.println("lastSeq: " + lastSeg);
@@ -103,7 +106,7 @@ public class Simple_ftp_server {
             tmp = tmpReceiver.getData();
 //            System.out.println("tmp.size: " + tmp.length);
 
-            clientAddr = tmpReceiver.getAddress();
+//            clientAddr = tmpReceiver.getAddress();
 //            System.out.println("clientAddr " + clientAddr);
 
             //  Sequence Number Field
@@ -125,45 +128,45 @@ public class Simple_ftp_server {
 
 //                else {
 
-                    //  If the packet if expected.
-                    if (expSequence == currSequence) {
+                //  If the packet if expected.
+                if (expSequence == currSequence) {
 
-                        byte[] data;
-                        int dataSize;
+                    byte[] data;
+                    int dataSize;
 
-                        if (currSequence < mssNum) {
-                            data = new byte[mss];
-                            dataSize = mss;
-                        }
-                        else{
-                            data = new byte[lastSeg];
-                            dataSize = lastSeg;
-                        }
+                    if (currSequence < mssNum) {
+                        data = new byte[mss];
+                        dataSize = mss;
+                    }
+                    else{
+                        data = new byte[lastSeg];
+                        dataSize = lastSeg;
+                    }
 
-                        System.arraycopy(tmp, 8, data, 0, dataSize);
+                    System.arraycopy(tmp, 8, data, 0, dataSize);
 
-                        byte[] currCheck = Simple_ftp_helper.compChecksum(data);
-                        boolean isCorrect = (currCheck[0] == tmp[4] && currCheck[1] == tmp[5]) ? true : false;
+                    byte[] currCheck = Simple_ftp_helper.compChecksum(data);
+                    boolean isCorrect = (currCheck[0] == tmp[4] && currCheck[1] == tmp[5]) ? true : false;
 
-                        if(isCorrect){
+                    if(isCorrect){
 
-                            fileOut.write(data, 0, dataSize);
-                            expSequence++;
+                        fileOut.write(data, 0, dataSize);
+                        expSequence++;
 
-                            DatagramPacket res = generateACK(tmp);
-                            replyACK.send(res);
-
-                        } else {
-                            System.out.println("Packet Discard, Checksum not match! Sequence number = " + currSequence);
-                        }
-
-                    } else if(expSequence > currSequence) {
                         DatagramPacket res = generateACK(tmp);
                         replyACK.send(res);
+
                     } else {
+                        System.out.println("Packet Discard, Checksum not match! Sequence number = " + currSequence);
+                    }
+
+                } else if(expSequence > currSequence) {
+                    DatagramPacket res = generateACK(tmp);
+                    replyACK.send(res);
+                } else {
 //                        System.out.println("Packet Discard, Not the expect sequence number! Sequence number = " + currSequence +
 //                                ", Expect sequence number = " + expSequence);
-                    }
+                }
 //                }
             }
             else{
